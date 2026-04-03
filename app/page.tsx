@@ -74,7 +74,6 @@ export default function Home() {
       <header className="bg-white shadow-sm border-b border-amber-200">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold text-amber-900">☕ 브루잉 레시피 추천 봇</h1>
-          <p className="text-sm text-amber-700 mt-1">코스피어 용챔 가이드 기반</p>
         </div>
       </header>
 
