@@ -1,14 +1,38 @@
 'use client';
 
 import { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { Coffee, Droplets, Lightbulb, Sparkles, SlidersHorizontal, Send, Search } from 'lucide-react';
+import { Coffee, Droplets, Lightbulb, Sparkles, SlidersHorizontal, Search } from 'lucide-react';
+
+interface RecipeData {
+  beanInfo: {
+    name: string;
+    origin: string;
+    process: string;
+    roast: string;
+  };
+  recipe: {
+    [key: string]: string;
+  };
+  pouring: Array<{
+    step: number;
+    time: string;
+    water: string;
+    description: string;
+  }>;
+  tips: string[];
+  flavor: {
+    [key: string]: string;
+  };
+  adjustments: Array<{
+    problem: string;
+    solution: string;
+  }>;
+}
 
 export default function Home() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [recipe, setRecipe] = useState<string | null>(null);
+  const [recipeData, setRecipeData] = useState<RecipeData | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,24 +54,20 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setRecipe(data.message);
+      if (data.recipe) {
+        setRecipeData(data.recipe);
+      }
     } catch (error) {
       console.error('Error:', error);
-      setRecipe('죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNewSearch = () => {
-    setRecipe(null);
-    setInput('');
-  };
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
       {/* Initial State - Google-like Search */}
-      {!recipe && !isLoading && (
+      {!recipeData && !isLoading && (
         <div className="flex flex-col items-center justify-center min-h-screen px-6">
           <div className="w-full max-w-3xl">
             {/* Title */}
@@ -116,12 +136,12 @@ export default function Home() {
         </div>
       )}
 
-      {/* Dashboard State */}
-      {recipe && !isLoading && (
-        <div className="min-h-screen pb-20">
+      {/* Dashboard State - Cheatsheet Layout */}
+      {recipeData && !isLoading && (
+        <div className="min-h-screen p-6">
           {/* Top Search Bar */}
-          <div className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-[#262626]">
-            <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="sticky top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-[#262626] mb-6 -mx-6 px-6 py-4">
+            <div className="max-w-[1800px] mx-auto">
               <div className="flex gap-3">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
@@ -149,92 +169,124 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Dashboard Content */}
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            <div className="prose prose-invert prose-lg max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h2: ({ children }) => {
-                    const text = String(children);
-                    let icon = <Coffee size={24} className="text-amber-400" />;
+          {/* Cheatsheet Grid Layout */}
+          <div className="max-w-[1800px] mx-auto">
+            {/* Bean Info Header */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-amber-500/10 to-orange-600/10 border border-amber-500/20 rounded-xl">
+              <div className="flex items-center gap-4">
+                <Coffee size={24} className="text-amber-400" />
+                <div>
+                  <h2 className="text-xl font-bold text-white">{recipeData.beanInfo.name}</h2>
+                  <p className="text-sm text-gray-400">
+                    {recipeData.beanInfo.origin} · {recipeData.beanInfo.process} · {recipeData.beanInfo.roast}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-                    if (text.includes('푸어링') || text.includes('순서')) {
-                      icon = <Droplets size={24} className="text-blue-400" />;
-                    } else if (text.includes('특화') || text.includes('포인트') || text.includes('팁')) {
-                      icon = <Lightbulb size={24} className="text-yellow-400" />;
-                    } else if (text.includes('맛') || text.includes('프로파일')) {
-                      icon = <Sparkles size={24} className="text-purple-400" />;
-                    } else if (text.includes('조절') || text.includes('가이드')) {
-                      icon = <SlidersHorizontal size={24} className="text-green-400" />;
-                    }
+            {/* Grid Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - Recipe + Pouring */}
+              <div className="space-y-6">
+                {/* Recipe Card */}
+                <div className="bg-[#1a1a1a] border border-[#262626] rounded-xl p-6">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#262626]">
+                    <Coffee size={20} className="text-amber-400" />
+                    <h3 className="text-lg font-bold text-white">추천 레시피</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {Object.entries(recipeData.recipe).map(([key, value]) => (
+                      <div key={key} className="flex justify-between items-center py-2 border-b border-[#1a1a1a]">
+                        <span className="text-sm text-gray-400">{key}</span>
+                        <span className="text-sm font-semibold text-amber-300">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-                    return (
-                      <div className="flex items-center gap-3 mt-8 mb-4 pb-3 border-b border-[#262626]">
-                        {icon}
-                        <h2 className="text-2xl font-bold text-white m-0">{children}</h2>
+                {/* Pouring Steps Card */}
+                <div className="bg-[#1a1a1a] border border-[#262626] rounded-xl p-6">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#262626]">
+                    <Droplets size={20} className="text-blue-400" />
+                    <h3 className="text-lg font-bold text-white">푸어링 순서</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {recipeData.pouring.map((step, idx) => (
+                      <div key={idx} className="bg-[#0f0f0f] border border-[#262626] rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-bold text-blue-400">{step.step}</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-mono text-gray-400">{step.time}</span>
+                              <span className="text-sm font-bold text-blue-300">{step.water}</span>
+                            </div>
+                            <p className="text-sm text-gray-300 leading-relaxed">{step.description}</p>
+                          </div>
+                        </div>
                       </div>
-                    );
-                  },
-                  h3: ({ children }) => (
-                    <h3 className="text-lg font-semibold mt-6 mb-3 text-amber-300">{children}</h3>
-                  ),
-                  p: ({ children }) => (
-                    <p className="mb-4 text-base leading-relaxed text-gray-300">{children}</p>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="space-y-2 mb-6 text-gray-300">{children}</ul>
-                  ),
-                  ol: ({ children }) => (
-                    <ol className="space-y-3 mb-6 text-gray-300">{children}</ol>
-                  ),
-                  li: ({ children }) => (
-                    <li className="text-base leading-relaxed">{children}</li>
-                  ),
-                  table: ({ children }) => (
-                    <div className="my-6 overflow-hidden rounded-xl border border-[#333333] bg-[#1a1a1a]">
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-[#333333]">
-                          {children}
-                        </table>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Middle Column - Tips + Flavor */}
+              <div className="space-y-6">
+                {/* Tips Card */}
+                <div className="bg-[#1a1a1a] border border-[#262626] rounded-xl p-6">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#262626]">
+                    <Lightbulb size={20} className="text-yellow-400" />
+                    <h3 className="text-lg font-bold text-white">특화 포인트</h3>
+                  </div>
+                  <ul className="space-y-3">
+                    {recipeData.tips.map((tip, idx) => (
+                      <li key={idx} className="flex items-start gap-3 text-sm text-gray-300 leading-relaxed">
+                        <span className="flex-shrink-0 w-1.5 h-1.5 bg-yellow-400 rounded-full mt-2"></span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Flavor Profile Card */}
+                <div className="bg-[#1a1a1a] border border-[#262626] rounded-xl p-6">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#262626]">
+                    <Sparkles size={20} className="text-purple-400" />
+                    <h3 className="text-lg font-bold text-white">예상 맛 프로파일</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {Object.entries(recipeData.flavor).map(([key, value]) => (
+                      <div key={key}>
+                        <div className="text-xs font-semibold text-purple-400 mb-1">{key}</div>
+                        <div className="text-sm text-gray-300 leading-relaxed">{value}</div>
                       </div>
-                    </div>
-                  ),
-                  thead: ({ children }) => (
-                    <thead className="bg-[#262626]">{children}</thead>
-                  ),
-                  th: ({ children }) => (
-                    <th className="px-5 py-4 text-left text-sm font-bold text-amber-400 tracking-wide">
-                      {children}
-                    </th>
-                  ),
-                  tbody: ({ children }) => (
-                    <tbody className="divide-y divide-[#262626]">{children}</tbody>
-                  ),
-                  td: ({ children }) => (
-                    <td className="px-5 py-4 text-base text-gray-200">
-                      {children}
-                    </td>
-                  ),
-                  code: ({ children, className }) => {
-                    const isInline = !className;
-                    return isInline ? (
-                      <code className="bg-[#262626] text-amber-300 px-2 py-1 rounded text-sm font-mono border border-[#333333]">
-                        {children}
-                      </code>
-                    ) : (
-                      <code className="block bg-[#0f0f0f] p-4 rounded-lg text-sm font-mono overflow-x-auto text-gray-300 border border-[#262626]">
-                        {children}
-                      </code>
-                    );
-                  },
-                  strong: ({ children }) => (
-                    <strong className="font-bold text-amber-300">{children}</strong>
-                  ),
-                }}
-              >
-                {recipe}
-              </ReactMarkdown>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Adjustments */}
+              <div>
+                <div className="bg-[#1a1a1a] border border-[#262626] rounded-xl p-6">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#262626]">
+                    <SlidersHorizontal size={20} className="text-green-400" />
+                    <h3 className="text-lg font-bold text-white">조절 가이드</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {recipeData.adjustments.map((adj, idx) => (
+                      <div key={idx} className="bg-[#0f0f0f] border border-[#262626] rounded-lg p-4">
+                        <div className="text-sm font-semibold text-red-400 mb-2">
+                          {adj.problem}
+                        </div>
+                        <div className="text-sm text-gray-300 leading-relaxed">
+                          → {adj.solution}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
