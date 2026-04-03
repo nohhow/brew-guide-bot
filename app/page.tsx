@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -94,6 +95,7 @@ export default function Home() {
               >
                 <div className="prose prose-sm max-w-none">
                   <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
                     components={{
                       p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
                       h2: ({ children }) => (
